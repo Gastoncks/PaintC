@@ -8,10 +8,10 @@
       "type": "shell",
       "group": "build",
       "linux": {
-        "command": "gcc main.c -o main -I./include -L./lib -lSDL2main -lSDL2 -lm -ldl -lpthread -lX11"
+        "command": "gcc main.c -o main -I./include -L./lib -lSDL2main -lSDL2 -lSDL2_ttf -lm -ldl -lpthread -lX11"
       },
       "windows": {
-        "command": "gcc main.c -o main.exe -I./include -L./lib -lmingw32 -lSDL2main -lSDL2"
+        "command": "gcc main.c -o main.exe -I./include -L./lib -lmingw32 -lSDL2main -lSDL2 -lSDL2_ttf"
       }
     },
     {

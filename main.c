@@ -1,12 +1,29 @@
 #include "include/SDL2/SDL.h"
+#include "SDL2/SDL_ttf.h"
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdlib.h>
+
+#define MY_FONT "C:\\Windows\\Fonts\\arial.ttf"
 
 int main(int argc, char* argv[]) {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         printf("Erreur d'initialisation SDL: %s\n", SDL_GetError());
         return 1;
     }
+    // Initialize SDL_ttf
+    if (TTF_Init() < 0) {
+        printf("SDL_ttf could not initialize! TTF_Error: %s\n", TTF_GetError());
+        SDL_Quit();
+        return 1;
+    }
+    TTF_Font *font = TTF_OpenFont(MY_FONT, 16);
+    if (font == NULL) {
+        printf("Failed to load font: %s\n", TTF_GetError());
+        TTF_Quit();
+        SDL_Quit();
+        return 1;
+    }        
 
     typedef struct {
         SDL_Window* window;
@@ -23,7 +40,7 @@ int main(int argc, char* argv[]) {
     unsigned int wightpen = 10;
     bool mousePressed = false;
 
-    // Fenêtre 1
+    // Windows 1
     win1.window = SDL_CreateWindow(
         "GastonPaint",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
@@ -35,7 +52,7 @@ int main(int argc, char* argv[]) {
     win1.mouseX = 0;
     win1.mouseY = 0;
 
-    // Fenêtre 2
+    // Windows 2 for colors
     win2.window = SDL_CreateWindow(
         "Couleur",
         SDL_WINDOWPOS_CENTERED + 50, SDL_WINDOWPOS_CENTERED + 50,
@@ -47,14 +64,15 @@ int main(int argc, char* argv[]) {
 
     int running = 1;
     SDL_Event event;
+    SDL_Rect rect = {0, 0, wightpen, wightpen};
 
+    /* Rendu initial win1*/
     SDL_SetRenderDrawColor(win1.renderer, 255, 255, 255, 255);
     SDL_RenderClear(win1.renderer);
     SDL_SetRenderDrawColor(win1.renderer, 0, 0, 0, 255);
-    SDL_Rect rect = {0, 0, wightpen, wightpen};
-    SDL_RenderFillRect(win1.renderer, &win1.pen);
     SDL_RenderDrawPoint(win1.renderer, win1.mouseX, win1.mouseY);
 
+    /* Rendu initial win2*/
     SDL_SetRenderDrawColor(win2.renderer, 255, 0, 0, 255); // Rouge
     SDL_RenderFillRect(win2.renderer, &(SDL_Rect){0, 0, 200, 150});
     SDL_SetRenderDrawColor(win2.renderer, 0, 255, 0, 255); // Vert
@@ -63,6 +81,11 @@ int main(int argc, char* argv[]) {
     SDL_RenderFillRect(win2.renderer, &(SDL_Rect){0, 150, 200, 150});
     SDL_SetRenderDrawColor(win2.renderer, 0, 0, 0, 255); // Noir
     SDL_RenderFillRect(win2.renderer, &(SDL_Rect){200, 150, 200, 150});
+    SDL_Color textColor = {0, 0, 0, 255}; // black color
+    SDL_Surface *textSurface = TTF_RenderText_Solid(font, "Click on the color you want", textColor);
+    SDL_Texture *textTexture = SDL_CreateTextureFromSurface(win2.renderer, textSurface);
+    SDL_Rect textRect = {50, 50, textSurface->w, textSurface->h}; // rectangle where the text is drawn 
+    SDL_RenderCopy(win2.renderer, textTexture, NULL, &textRect);
     SDL_RenderPresent(win2.renderer);
 
     PaintWindow* activeWindow = NULL;
@@ -126,7 +149,10 @@ int main(int argc, char* argv[]) {
             }
             if (event.type == SDL_MOUSEBUTTONDOWN) {
                 if (event.button.button == SDL_BUTTON_LEFT) {
-                mousePressed = true;
+                    mousePressed = true;
+                    if (event.motion.windowID == win1.windowID) {
+                        SDL_RenderFillRect(win1.renderer, &rect);
+                        }
                 }
             }
             if (event.type == SDL_MOUSEBUTTONUP) {
