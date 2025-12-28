@@ -12,7 +12,6 @@ int main(int argc, char* argv[]) {
         SDL_Window* window;
         SDL_Renderer* renderer;
         Uint32 windowID;
-        bool mousePressed;
         SDL_Rect pen;
         int mouseX;
         int mouseY;
@@ -22,6 +21,7 @@ int main(int argc, char* argv[]) {
     PaintWindow win2;
 
     unsigned int wightpen = 10;
+    bool mousePressed = false;
 
     // Fenêtre 1
     win1.window = SDL_CreateWindow(
@@ -31,7 +31,6 @@ int main(int argc, char* argv[]) {
     );
     win1.renderer = SDL_CreateRenderer(win1.window, -1, SDL_RENDERER_ACCELERATED);
     win1.windowID = SDL_GetWindowID(win1.window);
-    win1.mousePressed = false;
     win1.pen = (SDL_Rect){0, 0, wightpen, wightpen};
     win1.mouseX = 0;
     win1.mouseY = 0;
@@ -44,7 +43,6 @@ int main(int argc, char* argv[]) {
     );
     win2.renderer = SDL_CreateRenderer(win2.window, -1, SDL_RENDERER_ACCELERATED);
     win2.windowID = SDL_GetWindowID(win2.window);
-    win2.mousePressed = false;
     win2.pen = (SDL_Rect){0, 0, wightpen, wightpen};
 
     int running = 1;
@@ -57,6 +55,16 @@ int main(int argc, char* argv[]) {
     SDL_RenderFillRect(win1.renderer, &win1.pen);
     SDL_RenderDrawPoint(win1.renderer, win1.mouseX, win1.mouseY);
 
+    SDL_SetRenderDrawColor(win2.renderer, 255, 0, 0, 255); // Rouge
+    SDL_RenderFillRect(win2.renderer, &(SDL_Rect){0, 0, 200, 150});
+    SDL_SetRenderDrawColor(win2.renderer, 0, 255, 0, 255); // Vert
+    SDL_RenderFillRect(win2.renderer, &(SDL_Rect){200, 0, 200, 150});
+    SDL_SetRenderDrawColor(win2.renderer, 0, 0, 255, 255); // Bleu
+    SDL_RenderFillRect(win2.renderer, &(SDL_Rect){0, 150, 200, 150});
+    SDL_SetRenderDrawColor(win2.renderer, 0, 0, 0, 255); // Noir
+    SDL_RenderFillRect(win2.renderer, &(SDL_Rect){200, 150, 200, 150});
+    SDL_RenderPresent(win2.renderer);
+
     while (running) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_WINDOWEVENT) {
@@ -64,11 +72,33 @@ int main(int argc, char* argv[]) {
                     running = 0;
                 }
             }
-            if (event.type == SDL_MOUSEBUTTONDOWN) {
-                if (event.button.button == SDL_BUTTON_LEFT) {
-                    win1.mousePressed = true;
+            /* Event Window 1 */
+            if (event.motion.windowID == win1.windowID) {
+                if (event.type == SDL_MOUSEMOTION) {
+                    rect.x = event.motion.x - rect.w / 2;
+                    rect.y = event.motion.y - rect.h / 2;
+                    if (mousePressed) {
+                        SDL_RenderFillRect(win1.renderer, &rect);
+                    }
                 }
             }
+            /* Event Window 2 */
+            if (event.motion.windowID == win2.windowID) {
+                if (event.type == SDL_MOUSEBUTTONDOWN) {
+                    if (event.button.button == SDL_BUTTON_LEFT) {
+                       if (event.button.x < 200 && event.button.y < 150) {
+                           SDL_SetRenderDrawColor(win1.renderer, 255, 0, 0, 255); // Rouge
+                       } else if (event.button.x >= 200 && event.button.y < 150) {
+                           SDL_SetRenderDrawColor(win1.renderer, 0, 255, 0, 255); // Vert
+                       } else if (event.button.x < 200 && event.button.y >= 150) {
+                           SDL_SetRenderDrawColor(win1.renderer, 0, 0, 255, 255); // Bleu
+                       } else {
+                           SDL_SetRenderDrawColor(win1.renderer, 0, 0, 0, 255); // Noir
+                       }
+                    }
+                }
+            }
+            /* Event Public */
             if (event.type == SDL_MOUSEWHEEL) {
                 if (event.wheel.y > 0) {
                     wightpen += 1;
@@ -78,20 +108,17 @@ int main(int argc, char* argv[]) {
                 rect.w = wightpen;
                 rect.h = wightpen;
             }
-            if (event.type == SDL_MOUSEBUTTONUP) {
+            if (event.type == SDL_MOUSEBUTTONDOWN) {
                 if (event.button.button == SDL_BUTTON_LEFT) {
-                    win1.mousePressed = false;
+                mousePressed = true;
                 }
             }
-            if (event.type == SDL_MOUSEMOTION) {
-                rect.x = event.motion.x - rect.w / 2;
-                rect.y = event.motion.y - rect.h / 2;
-                if (win1.mousePressed) {
-                    SDL_RenderFillRect(win1.renderer, &rect);
+            if (event.type == SDL_MOUSEBUTTONUP) {
+                if (event.button.button == SDL_BUTTON_LEFT) {
+                    mousePressed = false;
                 }
             }
         }
-
         SDL_RenderPresent(win1.renderer);
     }
 
