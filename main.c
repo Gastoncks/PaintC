@@ -65,9 +65,25 @@ int main(int argc, char* argv[]) {
     SDL_RenderFillRect(win2.renderer, &(SDL_Rect){200, 150, 200, 150});
     SDL_RenderPresent(win2.renderer);
 
+    PaintWindow* activeWindow = NULL;
+
     while (running) {
         while (SDL_PollEvent(&event)) {
+            /* Event Type Window*/
             if (event.type == SDL_WINDOWEVENT) {
+                if (event.window.event == SDL_WINDOWEVENT_ENTER) {
+                    if (event.window.windowID == win1.windowID) {
+                        activeWindow = &win1;
+                        SDL_RaiseWindow(activeWindow->window);
+                        SDL_SetWindowInputFocus(activeWindow->window);
+                    } else if (event.window.windowID == win2.windowID) {
+                        activeWindow = &win2;
+                        SDL_RaiseWindow(activeWindow->window);
+                        SDL_SetWindowInputFocus(activeWindow->window);
+                    }
+                }
+
+                /* Quit */
                 if (event.window.event == SDL_WINDOWEVENT_CLOSE) {
                     running = 0;
                 }
