@@ -5,6 +5,23 @@
 #include <stdlib.h>
 
 #define MY_FONT "C:\\Windows\\Fonts\\arial.ttf"
+typedef struct {
+    SDL_Window* window;
+    SDL_Renderer* renderer;
+    Uint32 windowID;
+    SDL_Rect pen;
+} PaintWindow;
+
+typedef struct {
+    SDL_Rect rect;       
+    SDL_Color baseColor;
+    SDL_Color hoverColor;
+    SDL_Color activeColor;
+} Button;
+
+bool isMouseOver(int mx, int my, SDL_Rect r) {
+    return (mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h);
+}
 
 int main(int argc, char* argv[]) {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -25,15 +42,6 @@ int main(int argc, char* argv[]) {
         return 1;
     }        
 
-    typedef struct {
-        SDL_Window* window;
-        SDL_Renderer* renderer;
-        Uint32 windowID;
-        SDL_Rect pen;
-        int mouseX;
-        int mouseY;
-    } PaintWindow;
-
     PaintWindow win1;
     PaintWindow win2;
 
@@ -49,10 +57,15 @@ int main(int argc, char* argv[]) {
     win1.renderer = SDL_CreateRenderer(win1.window, -1, SDL_RENDERER_ACCELERATED);
     win1.windowID = SDL_GetWindowID(win1.window);
     win1.pen = (SDL_Rect){0, 0, wightpen, wightpen};
-    win1.mouseX = 0;
-    win1.mouseY = 0;
 
     // Windows 2 for colors
+    
+    Button setcolorbutton;
+    setcolorbutton.rect = (SDL_Rect){10, 10, 60, 30};
+    setcolorbutton.baseColor = (SDL_Color){100, 100, 100, 255};
+    setcolorbutton.hoverColor = (SDL_Color){150, 150, 150, 255};
+    setcolorbutton.activeColor = (SDL_Color){0, 200, 0, 255};
+    
     win2.window = SDL_CreateWindow(
         "Couleur",
         SDL_WINDOWPOS_CENTERED + 50, SDL_WINDOWPOS_CENTERED + 50,
@@ -62,7 +75,7 @@ int main(int argc, char* argv[]) {
     win2.windowID = SDL_GetWindowID(win2.window);
     win2.pen = (SDL_Rect){0, 0, wightpen, wightpen};
 
-    int running = 1;
+    bool running = 1;
     SDL_Event event;
     SDL_Rect rect = {0, 0, wightpen, wightpen};
 
@@ -70,23 +83,20 @@ int main(int argc, char* argv[]) {
     SDL_SetRenderDrawColor(win1.renderer, 255, 255, 255, 255);
     SDL_RenderClear(win1.renderer);
     SDL_SetRenderDrawColor(win1.renderer, 0, 0, 0, 255);
-    SDL_RenderDrawPoint(win1.renderer, win1.mouseX, win1.mouseY);
 
     /* Rendu initial win2*/
-    SDL_SetRenderDrawColor(win2.renderer, 255, 0, 0, 255); // Rouge
-    SDL_RenderFillRect(win2.renderer, &(SDL_Rect){0, 0, 200, 150});
-    SDL_SetRenderDrawColor(win2.renderer, 0, 255, 0, 255); // Vert
-    SDL_RenderFillRect(win2.renderer, &(SDL_Rect){200, 0, 200, 150});
-    SDL_SetRenderDrawColor(win2.renderer, 0, 0, 255, 255); // Bleu
-    SDL_RenderFillRect(win2.renderer, &(SDL_Rect){0, 150, 200, 150});
-    SDL_SetRenderDrawColor(win2.renderer, 0, 0, 0, 255); // Noir
-    SDL_RenderFillRect(win2.renderer, &(SDL_Rect){200, 150, 200, 150});
     SDL_Color textColor = {0, 0, 0, 255}; // black color
     SDL_Surface *textSurface = TTF_RenderText_Solid(font, "Click on the color you want", textColor);
     SDL_Texture *textTexture = SDL_CreateTextureFromSurface(win2.renderer, textSurface);
     SDL_Rect textRect = {50, 50, textSurface->w, textSurface->h}; // rectangle where the text is drawn 
     SDL_RenderCopy(win2.renderer, textTexture, NULL, &textRect);
-    SDL_RenderPresent(win2.renderer);
+
+
+    SDL_SetRenderDrawColor(win2.renderer, 255, 255, 255, 255);
+    SDL_RenderClear(win2.renderer);
+    SDL_SetRenderDrawColor(win2.renderer, setcolorbutton.baseColor.r, setcolorbutton.baseColor.g, setcolorbutton.baseColor.b, setcolorbutton.baseColor.a);
+    SDL_RenderFillRect(win2.renderer, &setcolorbutton.rect);
+
 
     PaintWindow* activeWindow = NULL;
 
@@ -105,10 +115,9 @@ int main(int argc, char* argv[]) {
                         SDL_SetWindowInputFocus(activeWindow->window);
                     }
                 }
-
                 /* Quit */
                 if (event.window.event == SDL_WINDOWEVENT_CLOSE) {
-                    running = 0;
+                    running = false;
                 }
             }
             /* Event Window 1 */
@@ -123,18 +132,19 @@ int main(int argc, char* argv[]) {
             }
             /* Event Window 2 */
             if (event.motion.windowID == win2.windowID) {
-                if (event.type == SDL_MOUSEBUTTONDOWN) {
-                    if (event.button.button == SDL_BUTTON_LEFT) {
-                       if (event.button.x < 200 && event.button.y < 150) {
-                           SDL_SetRenderDrawColor(win1.renderer, 255, 0, 0, 255); // Rouge
-                       } else if (event.button.x >= 200 && event.button.y < 150) {
-                           SDL_SetRenderDrawColor(win1.renderer, 0, 255, 0, 255); // Vert
-                       } else if (event.button.x < 200 && event.button.y >= 150) {
-                           SDL_SetRenderDrawColor(win1.renderer, 0, 0, 255, 255); // Bleu
-                       } else {
-                           SDL_SetRenderDrawColor(win1.renderer, 0, 0, 0, 255); // Noir
-                       }
+                int mouseX_2, mouseY_2;
+                Uint32 mouseState = SDL_GetMouseState(&mouseX_2, &mouseY_2);
+                if (isMouseOver(mouseX_2, mouseY_2, setcolorbutton.rect)) {
+                    if (event.button.button == SDL_BUTTON_LEFT && event.type == SDL_MOUSEBUTTONDOWN) {
+                        SDL_SetRenderDrawColor(win2.renderer, setcolorbutton.activeColor.r,
+                        setcolorbutton.activeColor.g, setcolorbutton.activeColor.b, setcolorbutton.activeColor.a);
+                    } else {
+                        SDL_SetRenderDrawColor(win2.renderer, setcolorbutton.hoverColor.r,
+                        setcolorbutton.hoverColor.g, setcolorbutton.hoverColor.b, setcolorbutton.hoverColor.a);
                     }
+                } else {
+                    SDL_SetRenderDrawColor(win2.renderer, setcolorbutton.baseColor.r,
+                        setcolorbutton.baseColor.g, setcolorbutton.baseColor.b, setcolorbutton.baseColor.a);
                 }
             }
             /* Event Public */
@@ -162,6 +172,9 @@ int main(int argc, char* argv[]) {
             }
         }
         SDL_RenderPresent(win1.renderer);
+
+        SDL_RenderFillRect(win2.renderer, &setcolorbutton.rect);
+        SDL_RenderPresent(win2.renderer);
     }
 
     SDL_DestroyRenderer(win1.renderer);
