@@ -17,6 +17,7 @@ typedef struct {
     SDL_Color baseColor;
     SDL_Color hoverColor;
     SDL_Color activeColor;
+    bool isActive;
 } Button;
 
 bool isMouseOver(int mx, int my, SDL_Rect r) {
@@ -138,6 +139,7 @@ int main(int argc, char* argv[]) {
                     if (event.button.button == SDL_BUTTON_LEFT && event.type == SDL_MOUSEBUTTONDOWN) {
                         SDL_SetRenderDrawColor(win2.renderer, setcolorbutton.activeColor.r,
                         setcolorbutton.activeColor.g, setcolorbutton.activeColor.b, setcolorbutton.activeColor.a);
+                        setcolorbutton.isActive = true;
                     } else {
                         SDL_SetRenderDrawColor(win2.renderer, setcolorbutton.hoverColor.r,
                         setcolorbutton.hoverColor.g, setcolorbutton.hoverColor.b, setcolorbutton.hoverColor.a);
@@ -169,6 +171,12 @@ int main(int argc, char* argv[]) {
                 if (event.button.button == SDL_BUTTON_LEFT) {
                     mousePressed = false;
                 }
+                if (setcolorbutton.isActive == true) {
+                    // Change pen color to green when button is active
+                    SDL_SetRenderDrawColor(win1.renderer, 0, 255, 0, 255);
+                    setcolorbutton.isActive = false;
+                }
+
             }
         }
         SDL_RenderPresent(win1.renderer);
