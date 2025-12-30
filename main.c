@@ -24,6 +24,35 @@ bool isMouseOver(int mx, int my, SDL_Rect r) {
     return (mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h);
 }
 
+void renderGauge(SDL_Renderer* renderer, int x, int y, int w, int h, int value) {
+    /* Lock value between 0 and 255 */
+    if (value < 0) value = 0;
+    if (value > 255) value = 255;
+
+    /* Draw the background */
+    SDL_Rect bgRect = {x, y, w, h};
+    SDL_SetRenderDrawColor(renderer, 50, 50, 50, 255); // Gris foncé
+    SDL_RenderFillRect(renderer, &bgRect);
+
+    /* Calculate the fill rectangle height */
+    float percent = (float)value / 255.0f;
+    int fillHeight = (int)(h * percent);
+
+    /* Set the longeur of the fill rectangle */
+    SDL_Rect fillRect;
+    fillRect.x = x;
+    fillRect.w = w;
+    fillRect.h = fillHeight;
+    fillRect.y = (y + h) - fillHeight;
+    /* Draw the fill rectangle*/
+    SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);  // vert
+    SDL_RenderFillRect(renderer, &fillRect);
+
+    /* Border */
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // Blanc
+    SDL_RenderDrawRect(renderer, &bgRect);
+}
+
 int main(int argc, char* argv[]) {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         printf("Erreur d'initialisation SDL: %s\n", SDL_GetError());
@@ -98,8 +127,10 @@ int main(int argc, char* argv[]) {
     SDL_SetRenderDrawColor(win2.renderer, setcolorbutton.baseColor.r, setcolorbutton.baseColor.g, setcolorbutton.baseColor.b, setcolorbutton.baseColor.a);
     SDL_RenderFillRect(win2.renderer, &setcolorbutton.rect);
 
-
     PaintWindow* activeWindow = NULL;
+
+    int gaugeValue = 128;
+    renderGauge(win2.renderer, 150, 100, 10, 100, gaugeValue);
 
     while (running) {
         while (SDL_PollEvent(&event)) {
@@ -135,18 +166,22 @@ int main(int argc, char* argv[]) {
             if (event.motion.windowID == win2.windowID) {
                 int mouseX_2, mouseY_2;
                 Uint32 mouseState = SDL_GetMouseState(&mouseX_2, &mouseY_2);
+                /* Check if mouse is over the button */
                 if (isMouseOver(mouseX_2, mouseY_2, setcolorbutton.rect)) {
                     if (event.button.button == SDL_BUTTON_LEFT && event.type == SDL_MOUSEBUTTONDOWN) {
                         SDL_SetRenderDrawColor(win2.renderer, setcolorbutton.activeColor.r,
-                        setcolorbutton.activeColor.g, setcolorbutton.activeColor.b, setcolorbutton.activeColor.a);
+                            setcolorbutton.activeColor.g, setcolorbutton.activeColor.b, setcolorbutton.activeColor.a);
                         setcolorbutton.isActive = true;
+                        SDL_RenderFillRect(win2.renderer, &setcolorbutton.rect);
                     } else {
                         SDL_SetRenderDrawColor(win2.renderer, setcolorbutton.hoverColor.r,
-                        setcolorbutton.hoverColor.g, setcolorbutton.hoverColor.b, setcolorbutton.hoverColor.a);
+                            setcolorbutton.hoverColor.g, setcolorbutton.hoverColor.b, setcolorbutton.hoverColor.a);
+                        SDL_RenderFillRect(win2.renderer, &setcolorbutton.rect);
                     }
                 } else {
                     SDL_SetRenderDrawColor(win2.renderer, setcolorbutton.baseColor.r,
                         setcolorbutton.baseColor.g, setcolorbutton.baseColor.b, setcolorbutton.baseColor.a);
+                    SDL_RenderFillRect(win2.renderer, &setcolorbutton.rect);
                 }
             }
             /* Event Public */
@@ -178,10 +213,25 @@ int main(int argc, char* argv[]) {
                 }
 
             }
+            if (event.type == SDL_KEYDOWN) {
+                // Up and Down to change gauge value
+                switch (event.key.keysym.sym) {
+                    case SDLK_UP:
+                        gaugeValue += 5;
+                        if (gaugeValue > 255) gaugeValue = 255;
+                        printf("Valeur: %d\n", gaugeValue);
+                        renderGauge(win2.renderer, 150, 100, 10, 100, gaugeValue);
+                        break;
+                    case SDLK_DOWN:
+                        gaugeValue -= 5;
+                        if (gaugeValue < 0) gaugeValue = 0;
+                        printf("Valeur: %d\n", gaugeValue);
+                        renderGauge(win2.renderer, 150, 100, 10, 100, gaugeValue);
+                        break;
+                }
+            }
         }
         SDL_RenderPresent(win1.renderer);
-
-        SDL_RenderFillRect(win2.renderer, &setcolorbutton.rect);
         SDL_RenderPresent(win2.renderer);
     }
 
