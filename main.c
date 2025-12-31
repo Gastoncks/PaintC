@@ -30,6 +30,25 @@ bool isMouseOver(int mx, int my, SDL_Rect r) {
     return (mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h);
 }
 
+void UpdateIfSelectedGauge(Gauge* gauge, int mouseX,  int mouseY) {
+    if (isMouseOver(mouseX, mouseY, (SDL_Rect){gauge->x, gauge->y, gauge->w, gauge->h})) {
+        switch (event.key.keysym.sym) {
+            case SDLK_UP:
+                gauge->value += 5;
+                if (gauge->value > 255) gauge->value = 255;
+                printf("Valeur: %d\n", gauge->value);
+                renderGauge(win2.renderer, *gauge);
+                break;
+            case SDLK_DOWN:
+                gauge->value -= 5;
+                if (gauge->value < 0) gauge->value = 0;
+                printf("Valeur: %d\n", gauge->value);
+                renderGauge(win2.renderer, *gauge);
+                break;
+        }
+    }
+}
+
 void renderGauge(SDL_Renderer* renderer, Gauge gauge) {
     /* Lock value between 0 and 255 */
     if (gauge.value < 0) gauge.value = 0;
@@ -46,12 +65,12 @@ void renderGauge(SDL_Renderer* renderer, Gauge gauge) {
 
     /* Set the longeur of the fill rectangle */
     SDL_Rect fillRect;
-    fillRect.x = gauge.x;
-    fillRect.w = gauge.w;
+    fillRect.x = gauge->x;
+    fillRect.w = gauge->w;
     fillRect.h = fillHeight;
-    fillRect.y = (gauge.y + gauge.h) - fillHeight;
+    fillRect.y = (gauge->y + gauge->h) - fillHeight;
     /* Draw the fill rectangle*/
-    SDL_SetRenderDrawColor(renderer, gauge.color.r, gauge.color.g, gauge.color.b, gauge.color.a); 
+    SDL_SetRenderDrawColor(renderer, gauge->color.r, gauge->color.g, gauge->color.b, gauge->color.a); 
     SDL_RenderFillRect(renderer, &fillRect);
 
     /* Border */
@@ -192,23 +211,8 @@ int main(int argc, char* argv[]) {
                 }
                 if (event.type == SDL_KEYDOWN) {
                 // Up and Down to change gauge value
-                if (isMouseOver(mouseX_2, mouseY_2, (SDL_Rect){RedGauge.x, RedGauge.y, RedGauge.w, RedGauge.h})) {
-                    switch (event.key.keysym.sym) {
-                        case SDLK_UP:
-                            RedGauge.value += 5;
-                            if (RedGauge.value > 255) RedGauge.value = 255;
-                            printf("Valeur: %d\n", RedGauge.value);
-                            renderGauge(win2.renderer, RedGauge);
-                            break;
-                        case SDLK_DOWN:
-                            RedGauge.value -= 5;
-                            if (RedGauge.value < 0) RedGauge.value = 0;
-                            printf("Valeur: %d\n", RedGauge.value);
-                            renderGauge(win2.renderer, RedGauge);
-                            break;
-                    }
-                }
-            }   
+                    UpdateIfSelectedGauge(&RedGauge, mouseX_2, mouseY_2);
+                }   
             }
             /* Event Public */
             if (event.type == SDL_MOUSEWHEEL) {
