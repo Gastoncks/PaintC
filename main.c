@@ -30,25 +30,6 @@ bool isMouseOver(int mx, int my, SDL_Rect r) {
     return (mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h);
 }
 
-void UpdateIfSelectedGauge(Gauge* gauge, int mouseX,  int mouseY) {
-    if (isMouseOver(mouseX, mouseY, (SDL_Rect){gauge->x, gauge->y, gauge->w, gauge->h})) {
-        switch (event.key.keysym.sym) {
-            case SDLK_UP:
-                gauge->value += 5;
-                if (gauge->value > 255) gauge->value = 255;
-                printf("Valeur: %d\n", gauge->value);
-                renderGauge(win2.renderer, *gauge);
-                break;
-            case SDLK_DOWN:
-                gauge->value -= 5;
-                if (gauge->value < 0) gauge->value = 0;
-                printf("Valeur: %d\n", gauge->value);
-                renderGauge(win2.renderer, *gauge);
-                break;
-        }
-    }
-}
-
 void renderGauge(SDL_Renderer* renderer, Gauge gauge) {
     /* Lock value between 0 and 255 */
     if (gauge.value < 0) gauge.value = 0;
@@ -65,17 +46,36 @@ void renderGauge(SDL_Renderer* renderer, Gauge gauge) {
 
     /* Set the longeur of the fill rectangle */
     SDL_Rect fillRect;
-    fillRect.x = gauge->x;
-    fillRect.w = gauge->w;
+    fillRect.x = gauge.x;
+    fillRect.w = gauge.w;
     fillRect.h = fillHeight;
-    fillRect.y = (gauge->y + gauge->h) - fillHeight;
+    fillRect.y = (gauge.y + gauge.h) - fillHeight;
     /* Draw the fill rectangle*/
-    SDL_SetRenderDrawColor(renderer, gauge->color.r, gauge->color.g, gauge->color.b, gauge->color.a); 
+    SDL_SetRenderDrawColor(renderer, gauge.color.r, gauge.color.g, gauge.color.b, gauge.color.a); 
     SDL_RenderFillRect(renderer, &fillRect);
 
     /* Border */
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // noir
     SDL_RenderDrawRect(renderer, &bgRect);
+}
+
+void UpdateIfSelectedGauge(Gauge* gauge, int mouseX,  int mouseY, SDL_Event event, SDL_Renderer* renderer) {
+    if (isMouseOver(mouseX, mouseY, (SDL_Rect){gauge->x, gauge->y, gauge->w, gauge->h})) {
+        switch (event.key.keysym.sym) {
+            case SDLK_UP:
+                gauge->value += 5;
+                if (gauge->value > 255) gauge->value = 255;
+                printf("Valeur: %d\n", gauge->value);
+                renderGauge(renderer, *gauge);
+                break;
+            case SDLK_DOWN:
+                gauge->value -= 5;
+                if (gauge->value < 0) gauge->value = 0;
+                printf("Valeur: %d\n", gauge->value);
+                renderGauge(renderer, *gauge);
+                break;
+        }
+    }
 }
 
 int main(int argc, char* argv[]) {
@@ -155,7 +155,11 @@ int main(int argc, char* argv[]) {
     PaintWindow* activeWindow = NULL;
 
     Gauge RedGauge = {150, 100, 10, 100, {255, 0, 0, 255}, 50};
+    Gauge GreenGauge = {200, 100, 10, 100, {0, 255, 0, 255}, 50};
+    Gauge BlueGauge = {250, 100, 10, 100, {0, 0, 255, 255}, 50};
     renderGauge(win2.renderer, RedGauge);
+    renderGauge(win2.renderer, GreenGauge);
+    renderGauge(win2.renderer, BlueGauge);
 
     int mouseX_2, mouseY_2;
 
@@ -211,7 +215,9 @@ int main(int argc, char* argv[]) {
                 }
                 if (event.type == SDL_KEYDOWN) {
                 // Up and Down to change gauge value
-                    UpdateIfSelectedGauge(&RedGauge, mouseX_2, mouseY_2);
+                    UpdateIfSelectedGauge(&RedGauge, mouseX_2, mouseY_2, event, win2.renderer);
+                    UpdateIfSelectedGauge(&GreenGauge, mouseX_2, mouseY_2, event, win2.renderer);
+                    UpdateIfSelectedGauge(&BlueGauge, mouseX_2, mouseY_2, event, win2.renderer);
                 }   
             }
             /* Event Public */
@@ -238,7 +244,7 @@ int main(int argc, char* argv[]) {
                 }
                 if (setcolorbutton.isActive == true) {
                     // Change pen color to green when button is active
-                    SDL_SetRenderDrawColor(win1.renderer, 0, 255, 0, 255);
+                    SDL_SetRenderDrawColor(win1.renderer, RedGauge.value, GreenGauge.value, BlueGauge.value, 255);
                     setcolorbutton.isActive = false;
                 }
             }
