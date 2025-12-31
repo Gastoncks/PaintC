@@ -20,36 +20,42 @@ typedef struct {
     bool isActive;
 } Button;
 
+typedef struct {
+    int x, y, w, h;
+    SDL_Color color; //gauge color
+    int value;   //gauge value (0-255)
+} Gauge;
+
 bool isMouseOver(int mx, int my, SDL_Rect r) {
     return (mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h);
 }
 
-void renderGauge(SDL_Renderer* renderer, int x, int y, int w, int h, int value) {
+void renderGauge(SDL_Renderer* renderer, Gauge gauge) {
     /* Lock value between 0 and 255 */
-    if (value < 0) value = 0;
-    if (value > 255) value = 255;
+    if (gauge.value < 0) gauge.value = 0;
+    if (gauge.value > 255) gauge.value = 255;
 
     /* Draw the background */
-    SDL_Rect bgRect = {x, y, w, h};
+    SDL_Rect bgRect = {gauge.x, gauge.y, gauge.w, gauge.h};
     SDL_SetRenderDrawColor(renderer, 50, 50, 50, 255); // Gris foncé
     SDL_RenderFillRect(renderer, &bgRect);
 
     /* Calculate the fill rectangle height */
-    float percent = (float)value / 255.0f;
-    int fillHeight = (int)(h * percent);
+    float percent = (float)gauge.value / 255.0f;
+    int fillHeight = (int)(gauge.h * percent);
 
     /* Set the longeur of the fill rectangle */
     SDL_Rect fillRect;
-    fillRect.x = x;
-    fillRect.w = w;
+    fillRect.x = gauge.x;
+    fillRect.w = gauge.w;
     fillRect.h = fillHeight;
-    fillRect.y = (y + h) - fillHeight;
+    fillRect.y = (gauge.y + gauge.h) - fillHeight;
     /* Draw the fill rectangle*/
-    SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);  // vert
+    SDL_SetRenderDrawColor(renderer, gauge.color.r, gauge.color.g, gauge.color.b, gauge.color.a); 
     SDL_RenderFillRect(renderer, &fillRect);
 
     /* Border */
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // Blanc
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // noir
     SDL_RenderDrawRect(renderer, &bgRect);
 }
 
@@ -129,8 +135,10 @@ int main(int argc, char* argv[]) {
 
     PaintWindow* activeWindow = NULL;
 
-    int gaugeValue = 128;
-    renderGauge(win2.renderer, 150, 100, 10, 100, gaugeValue);
+    Gauge RedGauge = {150, 100, 10, 100, {255, 0, 0, 255}, 50};
+    renderGauge(win2.renderer, RedGauge);
+
+    int mouseX_2, mouseY_2;
 
     while (running) {
         while (SDL_PollEvent(&event)) {
@@ -164,7 +172,6 @@ int main(int argc, char* argv[]) {
             }
             /* Event Window 2 */
             if (event.motion.windowID == win2.windowID) {
-                int mouseX_2, mouseY_2;
                 Uint32 mouseState = SDL_GetMouseState(&mouseX_2, &mouseY_2);
                 /* Check if mouse is over the button */
                 if (isMouseOver(mouseX_2, mouseY_2, setcolorbutton.rect)) {
@@ -183,6 +190,25 @@ int main(int argc, char* argv[]) {
                         setcolorbutton.baseColor.g, setcolorbutton.baseColor.b, setcolorbutton.baseColor.a);
                     SDL_RenderFillRect(win2.renderer, &setcolorbutton.rect);
                 }
+                if (event.type == SDL_KEYDOWN) {
+                // Up and Down to change gauge value
+                if (isMouseOver(mouseX_2, mouseY_2, (SDL_Rect){RedGauge.x, RedGauge.y, RedGauge.w, RedGauge.h})) {
+                    switch (event.key.keysym.sym) {
+                        case SDLK_UP:
+                            RedGauge.value += 5;
+                            if (RedGauge.value > 255) RedGauge.value = 255;
+                            printf("Valeur: %d\n", RedGauge.value);
+                            renderGauge(win2.renderer, RedGauge);
+                            break;
+                        case SDLK_DOWN:
+                            RedGauge.value -= 5;
+                            if (RedGauge.value < 0) RedGauge.value = 0;
+                            printf("Valeur: %d\n", RedGauge.value);
+                            renderGauge(win2.renderer, RedGauge);
+                            break;
+                    }
+                }
+            }   
             }
             /* Event Public */
             if (event.type == SDL_MOUSEWHEEL) {
@@ -210,24 +236,6 @@ int main(int argc, char* argv[]) {
                     // Change pen color to green when button is active
                     SDL_SetRenderDrawColor(win1.renderer, 0, 255, 0, 255);
                     setcolorbutton.isActive = false;
-                }
-
-            }
-            if (event.type == SDL_KEYDOWN) {
-                // Up and Down to change gauge value
-                switch (event.key.keysym.sym) {
-                    case SDLK_UP:
-                        gaugeValue += 5;
-                        if (gaugeValue > 255) gaugeValue = 255;
-                        printf("Valeur: %d\n", gaugeValue);
-                        renderGauge(win2.renderer, 150, 100, 10, 100, gaugeValue);
-                        break;
-                    case SDLK_DOWN:
-                        gaugeValue -= 5;
-                        if (gaugeValue < 0) gaugeValue = 0;
-                        printf("Valeur: %d\n", gaugeValue);
-                        renderGauge(win2.renderer, 150, 100, 10, 100, gaugeValue);
-                        break;
                 }
             }
         }
