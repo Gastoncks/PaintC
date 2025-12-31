@@ -26,11 +26,11 @@ typedef struct {
     int value;   //gauge value (0-255)
 } Gauge;
 
-bool isMouseOver(int mx, int my, SDL_Rect r) {
+bool isMouseOver(int mx, int my, SDL_Rect r) { /* Check if mouse is over a rectangle */
     return (mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h);
 }
 
-void renderGauge(SDL_Renderer* renderer, Gauge gauge) {
+void renderGauge(SDL_Renderer* renderer, Gauge gauge) { /*Render Gauge*/
     /* Lock value between 0 and 255 */
     if (gauge.value < 0) gauge.value = 0;
     if (gauge.value > 255) gauge.value = 255;
@@ -59,7 +59,8 @@ void renderGauge(SDL_Renderer* renderer, Gauge gauge) {
     SDL_RenderDrawRect(renderer, &bgRect);
 }
 
-void UpdateIfSelectedGauge(Gauge* gauge, int mouseX,  int mouseY, SDL_Event event, SDL_Renderer* renderer) {
+/* Update gauge value if isMouseOver and Up or Down press */
+void UpdateIfSelectedGauge(Gauge* gauge, int mouseX,  int mouseY, SDL_Event event, SDL_Renderer* renderer) { 
     if (isMouseOver(mouseX, mouseY, (SDL_Rect){gauge->x, gauge->y, gauge->w, gauge->h})) {
         switch (event.key.keysym.sym) {
             case SDLK_UP:
@@ -80,7 +81,7 @@ void UpdateIfSelectedGauge(Gauge* gauge, int mouseX,  int mouseY, SDL_Event even
 
 int main(int argc, char* argv[]) {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        printf("Erreur d'initialisation SDL: %s\n", SDL_GetError());
+        printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
         return 1;
     }
     // Initialize SDL_ttf
@@ -110,6 +111,7 @@ int main(int argc, char* argv[]) {
         800, 600, SDL_WINDOW_SHOWN
     );
     win1.renderer = SDL_CreateRenderer(win1.window, -1, SDL_RENDERER_ACCELERATED);
+    SDL_SetRenderDrawBlendMode(win1.renderer, SDL_BLENDMODE_BLEND);
     win1.windowID = SDL_GetWindowID(win1.window);
     win1.pen = (SDL_Rect){0, 0, wightpen, wightpen};
 
@@ -137,7 +139,7 @@ int main(int argc, char* argv[]) {
     /* Rendu initial win1*/
     SDL_SetRenderDrawColor(win1.renderer, 255, 255, 255, 255);
     SDL_RenderClear(win1.renderer);
-    SDL_SetRenderDrawColor(win1.renderer, 0, 0, 0, 255);
+    SDL_SetRenderDrawColor(win1.renderer, 50, 50, 50, 255);
 
     /* Rendu initial win2*/
     SDL_Color textColor = {0, 0, 0, 255}; // black color
@@ -154,13 +156,14 @@ int main(int argc, char* argv[]) {
 
     PaintWindow* activeWindow = NULL;
 
-    Gauge RedGauge = {150, 100, 10, 100, {255, 0, 0, 255}, 50};
-    Gauge GreenGauge = {200, 100, 10, 100, {0, 255, 0, 255}, 50};
-    Gauge BlueGauge = {250, 100, 10, 100, {0, 0, 255, 255}, 50};
+    Gauge RedGauge = {150, 10, 10, 100, {255, 0, 0, 255}, 50};
+    Gauge GreenGauge = {200, 10, 10, 100, {0, 255, 0, 255}, 50};
+    Gauge BlueGauge = {250, 10, 10, 100, {0, 0, 255, 255}, 50};
+    Gauge AlphaGauge = {300, 10, 10, 100, {255, 255, 255, 255}, 255};
     renderGauge(win2.renderer, RedGauge);
     renderGauge(win2.renderer, GreenGauge);
     renderGauge(win2.renderer, BlueGauge);
-
+    renderGauge(win2.renderer, AlphaGauge);
     int mouseX_2, mouseY_2;
 
     while (running) {
@@ -218,6 +221,7 @@ int main(int argc, char* argv[]) {
                     UpdateIfSelectedGauge(&RedGauge, mouseX_2, mouseY_2, event, win2.renderer);
                     UpdateIfSelectedGauge(&GreenGauge, mouseX_2, mouseY_2, event, win2.renderer);
                     UpdateIfSelectedGauge(&BlueGauge, mouseX_2, mouseY_2, event, win2.renderer);
+                    UpdateIfSelectedGauge(&AlphaGauge, mouseX_2, mouseY_2, event, win2.renderer);
                 }   
             }
             /* Event Public */
@@ -244,7 +248,7 @@ int main(int argc, char* argv[]) {
                 }
                 if (setcolorbutton.isActive == true) {
                     // Change pen color to green when button is active
-                    SDL_SetRenderDrawColor(win1.renderer, RedGauge.value, GreenGauge.value, BlueGauge.value, 255);
+                    SDL_SetRenderDrawColor(win1.renderer, RedGauge.value, GreenGauge.value, BlueGauge.value, AlphaGauge.value);
                     setcolorbutton.isActive = false;
                 }
             }
