@@ -195,7 +195,6 @@ int main(int argc, char* argv[]) {
     while (running) {
         /* Event handling */
         while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) running = false;
             /* Event Type Window*/
             if (event.type == SDL_WINDOWEVENT) {
                 if (event.window.event == SDL_WINDOWEVENT_ENTER) {
@@ -216,12 +215,22 @@ int main(int argc, char* argv[]) {
             }
             /* Event Window 1 */
             if (event.motion.windowID == win1.windowID) {
+                if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) mousePressed = true;
+                if (event.type == SDL_MOUSEBUTTONUP && event.button.button == SDL_BUTTON_LEFT) mousePressed = false;
+
                 if (event.type == SDL_MOUSEMOTION) {
                     rect.x = event.motion.x - rect.w / 2;
                     rect.y = event.motion.y - rect.h / 2;
                     if (mousePressed) {
                         SDL_RenderFillRect(win1.renderer, &rect);
                     }
+                }
+                
+                // Mouse Wheel to change pen size
+                if (event.type == SDL_MOUSEWHEEL) {
+                    if (event.wheel.y > 0) wightpen++;
+                    else if (event.wheel.y < 0 && wightpen > 1) wightpen--;
+                    rect.w = rect.h = wightpen;
                 }
             }
             /* Event Window 2 */
@@ -238,28 +247,6 @@ int main(int argc, char* argv[]) {
                 }   
             }
             /* Event Public */
-            if (event.type == SDL_MOUSEWHEEL) {
-                if (event.wheel.y > 0) {
-                    wightpen += 1;
-                } else if (event.wheel.y < 0 && wightpen > 1) {
-                    wightpen -= 1;
-                }
-                rect.w = wightpen;
-                rect.h = wightpen;
-            }
-            if (event.type == SDL_MOUSEBUTTONDOWN) {
-                if (event.button.button == SDL_BUTTON_LEFT) {
-                    mousePressed = true;
-                    if (event.motion.windowID == win1.windowID) {
-                        SDL_RenderFillRect(win1.renderer, &rect);
-                        }
-                }
-            }
-            if (event.type == SDL_MOUSEBUTTONUP) {
-                if (event.button.button == SDL_BUTTON_LEFT) {
-                    mousePressed = false;
-                }
-            }
             if (setcolorbutton.isActive) {
                 SDL_SetRenderDrawColor(win1.renderer, RedGauge.value, GreenGauge.value, BlueGauge.value, AlphaGauge.value);
             }
