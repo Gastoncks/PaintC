@@ -30,6 +30,24 @@ bool isMouseOver(int mx, int my, SDL_Rect r) { /* Check if mouse is over a recta
     return (mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h);
 }
 
+void renderButton(SDL_Renderer* renderer, Button button, int Mouse_x, int Mouse_y, SDL_Event event) {
+    if (isMouseOver(Mouse_x, Mouse_y, button.rect)) {
+        if (event.button.button == SDL_BUTTON_LEFT && event.type == SDL_MOUSEBUTTONDOWN) { 
+            /*Active Button*/
+            SDL_SetRenderDrawColor(renderer, button.activeColor.r, button.activeColor.g, button.activeColor.b, button.activeColor.a);
+            SDL_RenderFillRect(renderer, &button.rect);
+        } else {
+            /*Hover Button*/
+            SDL_SetRenderDrawColor(renderer, button.hoverColor.r, button.hoverColor.g, button.hoverColor.b, button.hoverColor.a);
+            SDL_RenderFillRect(renderer, &button.rect);
+        }
+    } else {
+        /*Base Button*/
+        SDL_SetRenderDrawColor(renderer, button.baseColor.r, button.baseColor.g, button.baseColor.b, button.baseColor.a);
+        SDL_RenderFillRect(renderer, &button.rect);
+    }
+}
+
 void renderGauge(SDL_Renderer* renderer, Gauge gauge) { /*Render Gauge*/
     /* Lock value between 0 and 255 */
     if (gauge.value < 0) gauge.value = 0;
@@ -115,13 +133,7 @@ int main(int argc, char* argv[]) {
     win1.windowID = SDL_GetWindowID(win1.window);
     win1.pen = (SDL_Rect){0, 0, wightpen, wightpen};
 
-    // Windows 2 for colors
-    
-    Button setcolorbutton;
-    setcolorbutton.rect = (SDL_Rect){10, 10, 60, 30};
-    setcolorbutton.baseColor = (SDL_Color){100, 100, 100, 255};
-    setcolorbutton.hoverColor = (SDL_Color){150, 150, 150, 255};
-    setcolorbutton.activeColor = (SDL_Color){0, 200, 0, 255};
+    // Windows 2 for color selection
     
     win2.window = SDL_CreateWindow(
         "Couleur",
@@ -142,29 +154,33 @@ int main(int argc, char* argv[]) {
     SDL_SetRenderDrawColor(win1.renderer, 50, 50, 50, 255);
 
     /* Rendu initial win2*/
-    SDL_Color textColor = {0, 0, 0, 255}; // black color
-    SDL_Surface *textSurface = TTF_RenderText_Solid(font, "Click on the color you want", textColor);
-    SDL_Texture *textTexture = SDL_CreateTextureFromSurface(win2.renderer, textSurface);
-    SDL_Rect textRect = {50, 50, textSurface->w, textSurface->h}; // rectangle where the text is drawn 
-    SDL_RenderCopy(win2.renderer, textTexture, NULL, &textRect);
+    int mouseX_2, mouseY_2;
 
+    SDL_Color textColor = {0, 0, 0, 255}; // black color for text
+
+    SDL_Surface *textSurface = TTF_RenderText_Solid(font, "Clique on the button after selecting the color", textColor);
+    SDL_Texture *textTexture = SDL_CreateTextureFromSurface(win2.renderer, textSurface);
+    SDL_Rect textRect = {70, 15, textSurface->w, textSurface->h}; // rectangle where the text is drawn 
+
+    Button setcolorbutton = {(SDL_Rect){10, 10, 60, 30},(SDL_Color){100, 100, 100, 255},
+        (SDL_Color){150, 150, 150, 255},(SDL_Color){0, 200, 0, 255}, false};
 
     SDL_SetRenderDrawColor(win2.renderer, 255, 255, 255, 255);
     SDL_RenderClear(win2.renderer);
-    SDL_SetRenderDrawColor(win2.renderer, setcolorbutton.baseColor.r, setcolorbutton.baseColor.g, setcolorbutton.baseColor.b, setcolorbutton.baseColor.a);
-    SDL_RenderFillRect(win2.renderer, &setcolorbutton.rect);
 
     PaintWindow* activeWindow = NULL;
 
-    Gauge RedGauge = {150, 10, 10, 100, {255, 0, 0, 255}, 50};
-    Gauge GreenGauge = {200, 10, 10, 100, {0, 255, 0, 255}, 50};
-    Gauge BlueGauge = {250, 10, 10, 100, {0, 0, 255, 255}, 50};
-    Gauge AlphaGauge = {300, 10, 10, 100, {255, 255, 255, 255}, 255};
-    renderGauge(win2.renderer, RedGauge);
+    Gauge RedGauge = {50, 50, 10, 100, {255, 0, 0, 255}, 50};
+    Gauge GreenGauge = {100, 50, 10, 100, {0, 255, 0, 255}, 50};
+    Gauge BlueGauge = {150, 50, 10, 100, {0, 0, 255, 255}, 50};
+    Gauge AlphaGauge = {200, 50, 10, 100, {255, 255, 255, 255}, 255};
+
+    renderButton(win2.renderer, setcolorbutton, mouseX_2, mouseY_2, event); //button
+    SDL_RenderCopy(win2.renderer, textTexture, NULL, &textRect); // text
+    renderGauge(win2.renderer, RedGauge); //gauges
     renderGauge(win2.renderer, GreenGauge);
     renderGauge(win2.renderer, BlueGauge);
     renderGauge(win2.renderer, AlphaGauge);
-    int mouseX_2, mouseY_2;
 
     while (running) {
         while (SDL_PollEvent(&event)) {
@@ -200,22 +216,7 @@ int main(int argc, char* argv[]) {
             if (event.motion.windowID == win2.windowID) {
                 Uint32 mouseState = SDL_GetMouseState(&mouseX_2, &mouseY_2);
                 /* Check if mouse is over the button */
-                if (isMouseOver(mouseX_2, mouseY_2, setcolorbutton.rect)) {
-                    if (event.button.button == SDL_BUTTON_LEFT && event.type == SDL_MOUSEBUTTONDOWN) {
-                        SDL_SetRenderDrawColor(win2.renderer, setcolorbutton.activeColor.r,
-                            setcolorbutton.activeColor.g, setcolorbutton.activeColor.b, setcolorbutton.activeColor.a);
-                        setcolorbutton.isActive = true;
-                        SDL_RenderFillRect(win2.renderer, &setcolorbutton.rect);
-                    } else {
-                        SDL_SetRenderDrawColor(win2.renderer, setcolorbutton.hoverColor.r,
-                            setcolorbutton.hoverColor.g, setcolorbutton.hoverColor.b, setcolorbutton.hoverColor.a);
-                        SDL_RenderFillRect(win2.renderer, &setcolorbutton.rect);
-                    }
-                } else {
-                    SDL_SetRenderDrawColor(win2.renderer, setcolorbutton.baseColor.r,
-                        setcolorbutton.baseColor.g, setcolorbutton.baseColor.b, setcolorbutton.baseColor.a);
-                    SDL_RenderFillRect(win2.renderer, &setcolorbutton.rect);
-                }
+                renderButton(win2.renderer, setcolorbutton, mouseX_2, mouseY_2, event);
                 if (event.type == SDL_KEYDOWN) {
                 // Up and Down to change gauge value
                     UpdateIfSelectedGauge(&RedGauge, mouseX_2, mouseY_2, event, win2.renderer);
